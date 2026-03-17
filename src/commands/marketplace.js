@@ -36,10 +36,13 @@ module.exports = {
           .setDescription(
             activities.slice(0, 5).map(a => {
               const isSale = a.type === 'resolve_purchase';
-              const price = a.price
-                ? `${(BigInt(a.price) / BigInt(1e24)).toString()} NEAR`
-                : '';
-              return `${isSale ? '💰' : '🔄'} **${a.token_id ?? 'Unknown'}** — ${a.contract_id ?? ''}${price ? ` — ${price}` : ''}`;
+              let priceStr = '';
+              if (a.price) {
+                try {
+                  priceStr = ` — ${(BigInt(a.price) / BigInt(1e24)).toString()} NEAR`;
+                } catch { /* ignore invalid price */ }
+              }
+              return `${isSale ? '💰' : '🔄'} **${a.token_id ?? 'Unknown'}** — ${a.contract_id ?? ''}${priceStr}`;
             }).join('\n')
           )
           .setTimestamp()

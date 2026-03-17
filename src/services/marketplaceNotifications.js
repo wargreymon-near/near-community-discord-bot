@@ -4,20 +4,29 @@ const { getMarketplaceActivity } = require('./near');
 
 const marketSubscriptions = new Map(); // guildId -> channelId
 const seenActivities = new Set();
+let marketTask = null;
+
+function parsePriceToNear(priceStr) {
+  try {
+    return (BigInt(priceStr) / BigInt(1e24)).toString();
+  } catch {
+    return null;
+  }
+}
 
 function startMarketplaceNotifications(client) {
   // Poll marketplace every 2 minutes
-  cron.schedule('*/2 * * * *', async () => {
+  marketTask = cron.schedule('*/2 * * * *', async () => {
     try {
       const activities = await getMarketplaceActivity();
 
-      for (const [guildId, channelId] of marketSubscriptions.entries()) {
+      for (const [, channelId] of marketSubscriptions.entries()) {
         const channel = client.channels.cache.get(channelId);
         if (!channel) continue;
 
         for (const activity of activities) {
           const id = activity._id ?? activity.receipt_id;
-          if (seenActivities.has(id)) continue;
+          if (!id || seenActivities.has(id)) continue;
           seenActivities.add(id);
 
           const isSale = activity.type === 'resolve_purchase';
@@ -32,8 +41,8 @@ function startMarketplaceNotifications(client) {
             .setFooter({ text: 'NEAR Community Bot • Paras.id' });
 
           if (isSale && activity.price) {
-            const nearPrice = (BigInt(activity.price) / BigInt(1e24)).toString();
-            embed.addFields({ name: 'Price', value: `${nearPrice} NEAR`, inline: true });
+            const nearPrice = parsePriceToNear(activity.price);
+            if (nearPrice) embed.addFields({ name: 'Price', value: `${nearPrice} NEAR`, inline: true });
           }
 
           if (activity.media) embed.setThumbnail(activity.media);
@@ -42,10 +51,13 @@ function startMarketplaceNotifications(client) {
         }
       }
 
-      // Keep seen set bounded
+      // Keep seen set bounded — remove oldest 500 entries
       if (seenActivities.size > 1000) {
-        const arr = [...seenActivities];
-        arr.splice(0, 500).forEach(id => seenActivities.delete(id));
+        let count = 0;
+        for (const id of seenActivities) {
+          seenActivities.delete(id);
+          if (++count >= 500) break;
+        }
       }
     } catch (err) {
       console.error('Marketplace notification error:', err.message);
@@ -53,6 +65,10 @@ function startMarketplaceNotifications(client) {
   });
 
   console.log('🏪 Marketplace notification scheduler started');
+}
+
+function stopMarketplaceNotifications() {
+  marketTask?.stop();
 }
 
 function subscribe(guildId, channelId) {
@@ -63,4 +79,4 @@ function unsubscribe(guildId) {
   marketSubscriptions.delete(guildId);
 }
 
-module.exports = { startMarketplaceNotifications, subscribe, unsubscribe };
+module.exports = { startMarketplaceNotifications, stopMarketplaceNotifications, subscribe, unsubscribe };

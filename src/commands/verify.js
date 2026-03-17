@@ -42,15 +42,26 @@ module.exports = {
           return interaction.editReply(`❌ Account **${account}** not found on NEAR mainnet.`);
         }
 
+        if (!data.result) {
+          return interaction.editReply('❌ Unexpected response from NEAR RPC. Please try again.');
+        }
+
         verifiedUsers.set(interaction.user.id, account);
 
         // Assign verified role if exists
         const role = interaction.guild.roles.cache.find(r => r.name === 'NEAR Verified');
         if (role) {
-          await interaction.member.roles.add(role).catch(() => {});
+          await interaction.member.roles.add(role).catch(err => {
+            console.error('Failed to assign NEAR Verified role:', err.message);
+          });
         }
 
-        const balance = BigInt(data.result?.amount ?? '0') / BigInt(1e24);
+        let balance = '0';
+        try {
+          balance = (BigInt(data.result.amount ?? '0') / BigInt(1e24)).toString();
+        } catch {
+          balance = 'N/A';
+        }
 
         const embed = new EmbedBuilder()
           .setTitle('✅ Wallet Verified')

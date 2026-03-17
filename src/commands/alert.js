@@ -43,16 +43,16 @@ module.exports = {
       await interaction.reply({ content: '🔕 Price alerts removed for this server.', ephemeral: true });
 
     } else if (sub === 'status') {
-      const sub = getSubscription(interaction.guildId);
-      if (!sub) {
+      const subscription = getSubscription(interaction.guildId);
+      if (!subscription) {
         return interaction.reply({ content: '❌ No price alerts configured. Use `/alert set` to set one.', ephemeral: true });
       }
       const embed = new EmbedBuilder()
         .setTitle('🔔 Alert Status')
         .setColor(0x00c2ff)
         .addFields(
-          { name: 'Channel', value: `<#${sub.channelId}>`, inline: true },
-          { name: 'Threshold', value: `${sub.threshold}%`, inline: true },
+          { name: 'Channel', value: `<#${subscription.channelId}>`, inline: true },
+          { name: 'Threshold', value: `${subscription.threshold}%`, inline: true },
         )
         .setTimestamp();
       await interaction.reply({ embeds: [embed], ephemeral: true });
