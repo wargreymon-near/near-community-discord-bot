@@ -1,0 +1,23 @@
+{
+  "name": "near-community-discord-bot",
+  "version": "1.0.0",
+  "description": "NEAR Community Discord Bot with price alerts, gas comparison, marketplace notifications and verification",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.25.1",
+    "axios": "^1.13.6",
+    "dotenv": "^17.3.1",
+    "node-cron": "^4.2.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT"
+}
